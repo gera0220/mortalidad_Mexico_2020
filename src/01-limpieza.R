@@ -26,7 +26,6 @@ iter_nalcsv20 <- read_csv('data/raw/ITER_NALCSV20.csv')
 # Creación de df útiles ----
 
 # Guardar estados y municipios de México. Filtrar datos para Chihuahua
-
 estados <- diccionario_entidades %>% 
   filter(cve_loc == '0000', cve_mun == '000') %>% 
   select(cve_ent, nom_loc)
@@ -43,7 +42,6 @@ municipios_chihuahua <- municipios_mexico %>%
   filter(cve_ent == '08')
 
 # Pegar población total, femenina y masculina al df estados
-
 estados_poblacion <- estados %>%
   left_join(iter_nalcsv20 %>% 
               select(ENTIDAD, NOM_LOC, POBTOT, POBFEM, POBMAS) %>% 
