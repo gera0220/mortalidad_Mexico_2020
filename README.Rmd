@@ -58,7 +58,7 @@ defunciones %>%
 
 Se puede observar que la principal causa de muerte se define como un NA, lo que implica que la *LMSPC* no la contempla. Sin embargo, se puede observar que pertenece al grupo *06*, el cual hace referencia a enfermedades víricas, por lo que dado el año en que se presentan los resultados y el grupo al que pertenece permite hacer una inferencia sobre la causa de muerte, en este caso tendría sentido inferir que se trata del COVID-19.
 
-```{r}
+```{r, echo=FALSE, message=FALSE}
 causas_muerte %>% 
   filter(sexo != '9') %>% 
   head(20) %>% 
