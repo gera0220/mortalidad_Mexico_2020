@@ -1,0 +1,87 @@
+---
+title: "Mortalidad en México 2020"
+output: github_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+Se realizó un análisis de datos relacionados a la mortalidad en México en el año 2020. Los datos utilizados se pueden encontrar en los siguientes enlaces:
+
+-   [Mortalidad México 2020](https://www.inegi.org.mx/programas/mortalidad/#Datos_abiertos)
+-   [ITER 2020](https://www.inegi.org.mx/programas/ccpv/2020/?ps=microdatos)
+
+```{r, message=FALSE, echo=FALSE}
+library(tidyverse)
+
+homicidios_estado <- read_csv('data/interim/homicidios_estatales.csv')
+
+lista_mx <- read_csv('data/raw/diccionario_especifico/lista_mexicana.csv')
+
+defunciones <- read_csv('data/raw/conjunto_de_datos/conjunto_de_datos_defunciones_registradas_2020.csv')
+```
+
+La lista de causa de muertes utilizada para realizar el análisis fue la *Lista Mexicana para la Selección de las Principales Causas (LMSPC)*, la cual permite establecer comparaciones a lo largo del tiempo.
+
+```{r, echo=FALSE, message=FALSE}
+causas_muerte <- defunciones %>% 
+  group_by(lista_mex, sexo) %>% 
+  summarise(total_sexo = n()) %>% 
+  left_join(lista_mx,
+            by = c('lista_mex' = 'CVE')) %>% 
+  mutate(sexo = as_factor(sexo)) %>% 
+  left_join(defunciones %>% 
+              group_by(lista_mex) %>% 
+              summarise(total_conjunto = n()),
+            by = 'lista_mex') %>% 
+  arrange(desc(total_conjunto)) %>% 
+  relocate(DESCRIP, .before = sexo)
+```
+
+En la siguiente tabla se muestran los resultados obtenidos.
+
+```{r, echo=FALSE, message=FALSE}
+defunciones %>% 
+    group_by(lista_mex) %>% 
+    summarise(total = n()) %>% 
+    arrange(desc(total)) %>% 
+    left_join(lista_mx,
+              by = c('lista_mex' = 'CVE')) %>% 
+    relocate(DESCRIP, .before = total) %>% 
+  rename(Grupo = 'lista_mex',
+         Descripción = 'DESCRIP',
+         Total = 'total') %>% 
+  head(10) %>% 
+  knitr::kable()
+```
+
+Se puede observar que la principal causa de muerte se define como un NA, lo que implica que la *LMSPC* no la contempla. Sin embargo, se puede observar que pertenece al grupo *06*, el cual hace referencia a enfermedades víricas, por lo que dado el año en que se presentan los resultados y el grupo al que pertenece permite hacer una inferencia sobre la causa de muerte, en este caso tendría sentido inferir que se trata del COVID-19.
+
+```{r}
+causas_muerte %>% 
+  filter(sexo != '9') %>% 
+  head(20) %>% 
+  ungroup() %>% 
+  mutate(DESCRIP = fct_reorder(DESCRIP, total_conjunto)) %>% 
+  ggplot(aes(total_sexo, DESCRIP)) +
+  geom_col(aes(fill = sexo),
+           width = 0.8) + 
+  labs(title = 'Mayores causas de muerte en México 2020',
+       x = 'Total de casos',
+       fill = 'Sexo') +
+  scale_fill_manual(values = c('#9ecae1', '#c994c7'),
+                    labels = c('Masculino', 'Femenino')) +
+  scale_y_discrete(labels= c('Accidentes vehiculares',
+                             'Enfermedad alcohólica del hígado',
+                             'Insuficiencia renal',
+                             'Enfermedades pulmonares',
+                             'Enfermedades del hígado',
+                             'Homicidios',
+                             'Neumonía',
+                             'Diabetes mellitus',
+                             'Infarto agudo del miocardio',
+                             'Covid-19')) +
+  theme(axis.title.y = element_blank())
+```
+
